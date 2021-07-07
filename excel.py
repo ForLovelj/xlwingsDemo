@@ -109,8 +109,9 @@ class ExcelOpt(object):
         print("sheet1数据条数---- %s ----"%len(valueList))
         print("sheet1列名：",valueList[0],sep="\n")   
         BRAND = "红牛"
-        i = 0
+        i = -1
         for v in valueList:
+            i += 1
             # print("key:%s value:%s"%key%value)
             if i>0:
                 #取办事处、客户编码、订单量
@@ -127,7 +128,7 @@ class ExcelOpt(object):
                     value = [name,num]
                     data[id] = value
                 # print("key:%s value:%s"%key%value)
-            i += 1
+            
             
         
 
@@ -142,15 +143,17 @@ class ExcelOpt(object):
         # valueList2 = sheet.range("A1:AI5").value
         print("sheet2数据条数---- %s ----"%len(valueList2))
         print("sheet2列名：",valueList2[0],sep="\n")   
-        j = 0
+        j = -1
         for v2 in valueList2:
             # print("key:%s value:%s"%key%value)
+            j += 1
             if j>0:
                 #取办事处、客户编码、订单量
                 name2 = str(v2[2]).strip()
                 id2 = str(v2[7]).strip()
                 brand2 = str(v2[26]).strip()
                 num2 = int(v2[27])
+                # print("%s"%id2)
                 if(BRAND != brand2):
                     continue
                 if data.get(id2) != None:
@@ -160,7 +163,7 @@ class ExcelOpt(object):
                 else:
                     value2 = [name2,num2]
                     data[id2] = value2
-            j += 1
+            
 
         # print(data)
         #创建新表
@@ -181,6 +184,6 @@ class ExcelOpt(object):
         formatData.sort(key=itemgetter(0))
         sheet.range("A2").value = formatData
         print("---------------数据处理完成---------------")
-        wb.save()
+        wb.save("data/d1.xls")
         wb.close()
         app.quit()
