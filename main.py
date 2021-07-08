@@ -5,4 +5,4 @@ from excel import (
 )
 if __name__ == '__main__':
     opt = ExcelOpt()
-    opt.extractData()
+    opt.extractDataDetail()

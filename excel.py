@@ -3,21 +3,40 @@ import math
 import xlwings as xw
 from operator import itemgetter, attrgetter
 
+from xlwings.main import Range
+
 filePath = "data/test.xlsx"
+
+#见费用网点明细表
+class RowData(object):
+    def __init__(self,name,id,brand,data={}):
+        #办事处
+        self.name = name
+        #客户编码
+        self.id = id
+        #品牌
+        self.brand = brand
+        #红牛(战马、果倍爽)供应商数据[红牛供应商编码1:红牛1，红牛供应商编码2:红牛2]
+        self.data = data
+
+    def __str__(self):
+        return "[name:%s,id:%s,brand:%s,data:%s]" %(self.name,self.id,self.brand,self.data)
+        
 
 class ExcelOpt(object):
 
     def __init__(self,filePath = filePath) -> None:
         super().__init__()
         self.filePath = filePath
+        self.app = xw.App(visible=True, add_book=False)
 
     def copy(self):
         # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
-        app = xw.App(visible=True, add_book=False)
-
+        # app = xw.App(visible=True, add_book=False)
+        app = self.app
         # 打开 data.xlsx 文件到 wookbook 中
-        wb = app.books.open(filePath)
+        wb = self.app.books.open(filePath)
         wb.save("data/test2.xlsx")
         wb.close()
         app.quit()
@@ -25,8 +44,8 @@ class ExcelOpt(object):
     def modify(self):
         # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
-        app = xw.App(visible=True, add_book=False)
-
+        # app = xw.App(visible=True, add_book=False)
+        app = self.app
         # 打开 data.xlsx 文件到 wookbook 中
         wb = app.books.open(filePath)
         # 切换到当前活动的 sheet 中
@@ -52,8 +71,8 @@ class ExcelOpt(object):
     def sum(self):
          # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
-        app = xw.App(visible=True, add_book=False)
-
+        # app = xw.App(visible=True, add_book=False)
+        app = self.app
         # 打开 data.xlsx 文件到 wookbook 中
         wb = app.books.open(filePath)
         # 切换到当前活动的 sheet 中
@@ -82,19 +101,21 @@ class ExcelOpt(object):
     def check(self,path1,path2):
          # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
-        app = xw.App(visible=True, add_book=False)
-
+        # app = xw.App(visible=True, add_book=False)
+        app = self.app
         # 打开 data.xlsx 文件到 wookbook 中
         wb = app.books.open(path1)
         sheet = wb.sheets.active
         valueList = sheet[0,0].current_region.value
         print(valueList)
 
+    #基于订单明细表、MIT订单表 提取出办事处、客户编码、订单量
     def extractData(self):
         data = {}
         # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
-        app = xw.App(visible=True, add_book=False)
+        # app = xw.App(visible=True, add_book=False)
+        app = self.app
 
         # 打开 data.xlsx 文件到 wookbook 中
         wb = app.books.open("data/d.xls")
@@ -124,6 +145,7 @@ class ExcelOpt(object):
                 if data.get(id) != None:
                     #销量累加
                     data[id][1] += num
+                    # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,i+1))
                 else:
                     value = [name,num]
                     data[id] = value
@@ -185,5 +207,200 @@ class ExcelOpt(object):
         sheet.range("A2").value = formatData
         print("---------------数据处理完成---------------")
         wb.save("data/d1.xls")
+        wb.close()
+        app.quit()
+
+    #基于订单明细表、MIT订单表 提取出费用网点明细表
+    def extractDataDetail(self):
+        app = self.app
+
+        # 打开 data.xlsx 文件到 wookbook 中
+        wb = app.books.open("data/d.xls")
+          # 切换到当前活动的 sheet 中
+        sheet = wb.sheets[0]
+        valueList = sheet.range("A1").current_region.value
+        # valueList = sheet.range("A1:AO5").value
+        print("sheet1数据条数---- %s ----"%len(valueList))
+        print("sheet1列名：",valueList[0],sep="\n")
+        BRAND_HN = "红牛"
+        BRAND_ZM = "战马"
+        BRAND_GBS = "果倍爽"
+        #记录转换的所有行数据{id:rowData}
+        data = {}
+        #[name,id,brand,{supplierId:num}]
+        # i = -1
+        for i,v in enumerate(valueList):
+            # i += 1
+            # print("key:%s value:%s"%key%value)
+            if i>0:
+                #取办事处、客户编码、品牌、供应商编码、订单量
+                name = str(v[0]).strip()
+                id = str(v[9]).strip()
+                brand = str(v[29]).strip()
+                supplierId = str(v[16]).strip()
+                num = int(v[31])
+                # print("name:%s id:%s brand:%s supplierId: %s num %s"%(name,id,brand,supplierId,num))
+                #构造品牌唯一key
+                key = brand+"-"+supplierId
+                rowData = data.get(id)
+                if rowData != None:                   
+                    if rowData[2].get(key) != None:
+                        #销量累加
+                        rowData[2][key] += num
+                        # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,i+1))
+                    else:
+                        #第N个供应商编码对应销量
+                        rowData[2][key] = num
+                else:
+                    rowData = [name,id,{key:num}]
+                    data[id] = rowData
+
+        # for d,v in data.items():
+        #     print(v)
+        #提取第二个sheet数据
+        #引用第二个表单
+        sheet = wb.sheets[1]
+        #将所引用的表单设为活动表单
+        sheet.activate
+        #引用活动表单
+        sheet = wb.sheets.active
+        valueList2 = sheet.range("A1").current_region.value
+        # valueList2 = sheet.range("A1:AI50").value
+        print("sheet2数据条数---- %s ----"%len(valueList2))
+        print("sheet2列名：",valueList2[0],sep="\n")   
+        # j = -1
+        for j,v in enumerate(valueList2):
+            # print("key:%s value:%s"%key%value)
+            # j += 1
+         #取办事处、客户编码、品牌、供应商编码、订单量
+            if j > 0:
+                name = str(v[2]).strip()
+                id = str(v[7]).strip()
+                brand = str(v[26]).strip()
+                supplierId = str(v[12]).strip()
+                num = int(v[27])
+                #构造品牌唯一key
+                key = brand+"-"+supplierId
+                rowData = data.get(id)
+                if rowData != None:                   
+                    if rowData[2].get(key) != None:
+                        #销量累加
+                        rowData[2][key] += num
+                        # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,j+1))
+                    else:
+                        #第二个供应商编码对应销量
+                        rowData[2][key] = num
+                else:
+                    rowData = [name,id,{key:num}]
+                    data[id] = rowData
+
+
+        # print(data)
+        #创建新表
+        wb.sheets.add("费用网点明细表")
+        # 引用
+        sheet = wb.sheets["费用网点明细表"]
+        #将所引用的表单设为活动表单
+        sheet.activate
+        #引用活动表单
+        sheet = wb.sheets.active
+        formatData = []
+        # 客户编码对应的红牛供应商编码最大数（动态的）
+        hnSupplierNum = 1
+        # 客户编码对应的战马供应商编码最大数（动态的）
+        zmSupplierNum = 1
+        # 客户编码对应的果倍爽供应商编码最大数（动态的）
+        gbsSupplierNum = 1
+        for k,v in data.items():
+            hnSupplierNum2 = 0
+            zmSupplierNum2 = 0
+            gbsSupplierNum2 = 0
+            for k1,v1 in v[2].items():
+                brandSupplierId = k1.split("-")
+                brand = brandSupplierId[0]
+                if BRAND_HN == brand:
+                    hnSupplierNum2 += 1
+                elif BRAND_ZM == brand:
+                   zmSupplierNum2 += 1
+                elif BRAND_GBS == brand:
+                   gbsSupplierNum2 += 1
+                else:
+                    print("未知品牌：%s 请校验表格数据-----"%brand)
+            hnSupplierNum = max(hnSupplierNum,hnSupplierNum2)
+            zmSupplierNum = max(zmSupplierNum,zmSupplierNum2)
+            gbsSupplierNum = max(gbsSupplierNum,gbsSupplierNum2)
+           
+        print("红牛供应商最大数量：%s 战马供应商最大数量：%s 果倍爽供应商最大数量: %s"%(hnSupplierNum,zmSupplierNum,gbsSupplierNum))
+        for k,v in data.items():
+            row = [v[0],v[1]]
+            x = 0
+            y = 0
+            z = 0
+            for k1,v1 in v[2].items():
+                brandSupplierId = k1.split("-")
+                brand = brandSupplierId[0]
+                supplierId = brandSupplierId[1]
+                if(brand == BRAND_HN):
+                    row.append(supplierId)
+                    row.append(v1)
+                    x+=1
+            diff = hnSupplierNum-x
+            if(diff>0):
+                #补齐表格数据
+                for i in range(diff):
+                    row.append("") 
+                    row.append("")      
+            for k2,v2 in v[2].items():    
+                brandSupplierId = k2.split("-")
+                brand = brandSupplierId[0]
+                supplierId = brandSupplierId[1]
+                if(brand == BRAND_ZM):
+                    row.append(supplierId)
+                    row.append(v2)
+                    y+=1
+            diff = zmSupplierNum-y
+            if(diff>0):
+                #补齐表格数据
+                for i in range(diff):
+                    row.append("") 
+                    row.append("")     
+            for k3,v3 in v[2].items():    
+                brandSupplierId = k3.split("-")
+                brand = brandSupplierId[0]
+                supplierId = brandSupplierId[1]
+                if(brand == BRAND_GBS):
+                    row.append(supplierId)
+                    row.append(v3)
+                    z+=1
+            diff = gbsSupplierNum-z
+            if(diff>0):
+                #补齐表格数据
+                for i in range(diff):
+                    row.append("") 
+                    row.append("") 
+            formatData.append(row)
+           
+        
+        # print(formatData)
+
+        sheetHead = ["办事处","客户编码"]
+        for m in range(hnSupplierNum):
+            sheetHead.append("红牛供应商编码%s"%(m+1))
+            sheetHead.append("红牛%s"%(m+1))
+        for n in range(zmSupplierNum):
+            sheetHead.append("战马供应商编码%s"%(n+1))
+            sheetHead.append("战马%s"%(n+1))
+        for o in range(gbsSupplierNum):
+            sheetHead.append("果倍爽供应商编码%s"%(o+1))
+            sheetHead.append("果倍爽%s"%(o+1))    
+        
+
+        print(sheetHead)
+        #写表头
+        sheet.range("A1").value = sheetHead
+        #写内容
+        sheet.range("A2").value = formatData
+        print("---------------数据处理完成---------------")
+        wb.save("data/d2.xls")
         wb.close()
         app.quit()
