@@ -3,9 +3,9 @@ import math
 import xlwings as xw
 from operator import itemgetter, attrgetter
 
-from xlwings.main import Range
-
 filePath = "data/test.xlsx"
+tempPath = "data/d.xls"
+
 
 #见费用网点明细表
 class RowData(object):
@@ -110,7 +110,7 @@ class ExcelOpt(object):
         print(valueList)
 
     #基于订单明细表、MIT订单表 提取出办事处、客户编码、订单量
-    def extractData(self):
+    def extractData(self,path=tempPath):
         data = {}
         # visible 控制 Excel 打开是否显示界面
         # add_book 控制是否添加新的 workbook
@@ -118,7 +118,7 @@ class ExcelOpt(object):
         app = self.app
 
         # 打开 data.xlsx 文件到 wookbook 中
-        wb = app.books.open("data/d.xls")
+        wb = app.books.open(path)
           # 切换到当前活动的 sheet 中
         sheet = wb.sheets[0]
         #总行数
@@ -189,9 +189,9 @@ class ExcelOpt(object):
 
         # print(data)
         #创建新表
-        wb.sheets.add("sheet5")
+        wb.sheets.add("temp")
         # 引用
-        sheet = wb.sheets["sheet5"]
+        sheet = wb.sheets["temp"]
         #将所引用的表单设为活动表单
         sheet.activate
         #引用活动表单
@@ -211,11 +211,11 @@ class ExcelOpt(object):
         app.quit()
 
     #基于订单明细表、MIT订单表 提取出费用网点明细表
-    def extractDataDetail(self):
+    def extractDataDetail(self,path=tempPath):
         app = self.app
 
         # 打开 data.xlsx 文件到 wookbook 中
-        wb = app.books.open("data/d.xls")
+        wb = app.books.open(path)
           # 切换到当前活动的 sheet 中
         sheet = wb.sheets[0]
         valueList = sheet.range("A1").current_region.value
@@ -288,7 +288,7 @@ class ExcelOpt(object):
                         rowData[2][key] += num
                         # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,j+1))
                     else:
-                        #第二个供应商编码对应销量
+                        #第个供应商编码对应销量
                         rowData[2][key] = num
                 else:
                     rowData = [name,id,{key:num}]
