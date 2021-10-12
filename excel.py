@@ -292,7 +292,7 @@ class ExcelOpt(object):
                 brand = str(v[26]).strip()
                 supplierId = str(v[12]).strip()
                 num = int(v[27])
-                totalPrice = float(v[27])
+                totalPrice = float(v[30])
                 #构造品牌唯一key
                 key = brand+"-"+supplierId
                 rowData = data.get(id)
