@@ -233,26 +233,39 @@ class ExcelOpt(object):
             # i += 1
             # print("key:%s value:%s"%key%value)
             if i>0:
-                #取办事处、客户编码、品牌、供应商编码、订单量
+                #取办事处、客户编码、品牌、供应商编码、订单量、产品小计
                 name = str(v[0]).strip()
                 id = str(v[9]).strip()
                 brand = str(v[29]).strip()
                 supplierId = str(v[16]).strip()
                 num = int(v[31])
+                totalPrice = float(v[36])
                 # print("name:%s id:%s brand:%s supplierId: %s num %s"%(name,id,brand,supplierId,num))
                 #构造品牌唯一key
                 key = brand+"-"+supplierId
                 rowData = data.get(id)
                 if rowData != None:                   
                     if rowData[2].get(key) != None:
-                        #销量累加
-                        rowData[2][key] += num
+                        #销量累加 PS:红牛取销量 战马和果倍爽取产品小计
+                        if brand == BRAND_HN: 
+                            rowData[2][key] += num
+                        else:
+                            rowData[2][key] += totalPrice
+                        
                         # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,i+1))
                     else:
-                        #第N个供应商编码对应销量
-                        rowData[2][key] = num
+                        #第N个供应商编码对应销量 PS:红牛取销量 战马和果倍爽取产品小计
+                        if brand == BRAND_HN: 
+                            rowData[2][key] = num
+                        else:
+                            rowData[2][key] = totalPrice
+                        
                 else:
-                    rowData = [name,id,{key:num}]
+                    #列数据 PS:红牛取销量 战马和果倍爽取产品小计
+                    if brand == BRAND_HN: 
+                        rowData = [name,id,{key:num}]
+                    else:
+                         rowData = [name,id,{key:totalPrice}]
                     data[id] = rowData
 
         # for d,v in data.items():
@@ -272,26 +285,37 @@ class ExcelOpt(object):
         for j,v in enumerate(valueList2):
             # print("key:%s value:%s"%key%value)
             # j += 1
-         #取办事处、客户编码、品牌、供应商编码、订单量
+         #取办事处、客户编码、品牌、供应商编码、订单量、产品小计
             if j > 0:
                 name = str(v[2]).strip()
                 id = str(v[7]).strip()
                 brand = str(v[26]).strip()
                 supplierId = str(v[12]).strip()
                 num = int(v[27])
+                totalPrice = float(v[27])
                 #构造品牌唯一key
                 key = brand+"-"+supplierId
                 rowData = data.get(id)
                 if rowData != None:                   
                     if rowData[2].get(key) != None:
-                        #销量累加
-                        rowData[2][key] += num
+                         #销量累加 PS:红牛取销量 战马和果倍爽取产品小计
+                        if brand == BRAND_HN: 
+                            rowData[2][key] += num
+                        else:
+                            rowData[2][key] += totalPrice
                         # print("相同客户编码：%s 在第%s行  销量已累加---"%(id,j+1))
                     else:
-                        #第个供应商编码对应销量
-                        rowData[2][key] = num
+                        #第N个供应商编码对应销量 PS:红牛取销量 战马和果倍爽取产品小计
+                        if brand == BRAND_HN: 
+                            rowData[2][key] = num
+                        else:
+                            rowData[2][key] = totalPrice
                 else:
-                    rowData = [name,id,{key:num}]
+                     #列数据 PS:红牛取销量 战马和果倍爽取产品小计
+                    if brand == BRAND_HN: 
+                        rowData = [name,id,{key:num}]
+                    else:
+                         rowData = [name,id,{key:totalPrice}]
                     data[id] = rowData
 
 
